@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io::{Write};
 
 #[derive(Debug, Clone)]
 pub enum JetBrainsIDE {
