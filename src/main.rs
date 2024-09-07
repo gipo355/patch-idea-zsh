@@ -6,23 +6,50 @@ use std::io::{stdin, stdout, Write as IoWrite};
 use std::path::PathBuf;
 use std::process;
 
-/**
-* path:
-* ~/.local/share/applications/jetbrains-idea-4de0683c-bebb-4365-885d-0112e2b356b5.desktop
-*
-* content:
-* [Desktop Entry]
-* Name=IntelliJ IDEA Ultimate 2024.2.1
-* Exec=/usr/bin/zsh -i -c "/home/wolf/.local/share/JetBrains/Toolbox/apps/intellij-idea-ultimate/bin/idea" %u
-* Version=1.0
-* Type=Application
-* Categories=Development;IDE;
-* Terminal=false
-* Icon=/home/wolf/.local/share/JetBrains/Toolbox/apps/intellij-idea-ultimate/bin/idea.svg
-* Comment=The Leading Java and Kotlin IDE
-* StartupWMClass=jetbrains-idea
-* StartupNotify=true
-*/
+#[derive(Debug)]
+enum JetBrainsIDE {
+    IntelliJ,
+    PyCharm,
+    WebStorm,
+    PhpStorm,
+    CLion,
+    Rider,
+    DataGrip,
+    RubyMine,
+    AppCode,
+}
+
+impl JetBrainsIDE {
+    fn as_str(&self) -> &'static str {
+        match self {
+            JetBrainsIDE::IntelliJ => "idea",
+            JetBrainsIDE::PyCharm => "pycharm",
+            JetBrainsIDE::WebStorm => "webstorm",
+            JetBrainsIDE::PhpStorm => "phpstorm",
+            JetBrainsIDE::CLion => "clion",
+            JetBrainsIDE::Rider => "rider",
+            JetBrainsIDE::DataGrip => "datagrip",
+            JetBrainsIDE::RubyMine => "rubymine",
+            JetBrainsIDE::AppCode => "appcode",
+        }
+    }
+
+    fn from_str(input: &str) -> Option<JetBrainsIDE> {
+        match input {
+            "idea" => Some(JetBrainsIDE::IntelliJ),
+            "pycharm" => Some(JetBrainsIDE::PyCharm),
+            "webstorm" => Some(JetBrainsIDE::WebStorm),
+            "phpstorm" => Some(JetBrainsIDE::PhpStorm),
+            "clion" => Some(JetBrainsIDE::CLion),
+            "rider" => Some(JetBrainsIDE::Rider),
+            "datagrip" => Some(JetBrainsIDE::DataGrip),
+            "rubymine" => Some(JetBrainsIDE::RubyMine),
+            "appcode" => Some(JetBrainsIDE::AppCode),
+            _ => None,
+        }
+    }
+}
+
 fn main() -> io::Result<()> {
     // Get the .local/share/ directory path
     let dir_path = match dirs::data_local_dir() {
@@ -75,16 +102,47 @@ fn main() -> io::Result<()> {
         shell_path, home_dir
     );
 
+    // Ask the user to choose the IDEs
+    println!("Choose the JetBrains IDEs to patch (comma-separated, default is all):");
+    println!(
+        "Options: idea, pycharm, webstorm, phpstorm, clion, rider, datagrip, rubymine, appcode"
+    );
+    print!("> ");
+    stdout().flush().unwrap();
+
+    let mut ide_input = String::new();
+    stdin().read_line(&mut ide_input).unwrap();
+    let ide_input = ide_input.trim().to_lowercase();
+
+    let selected_ides: Vec<JetBrainsIDE> = if ide_input.is_empty() {
+        vec![
+            JetBrainsIDE::IntelliJ,
+            JetBrainsIDE::PyCharm,
+            JetBrainsIDE::WebStorm,
+            JetBrainsIDE::PhpStorm,
+            JetBrainsIDE::CLion,
+            JetBrainsIDE::Rider,
+            JetBrainsIDE::DataGrip,
+            JetBrainsIDE::RubyMine,
+            JetBrainsIDE::AppCode,
+        ]
+    } else {
+        ide_input
+            .split(',')
+            .filter_map(|s| JetBrainsIDE::from_str(s.trim()))
+            .collect()
+    };
+
     // Find all matching files
     let files: Vec<PathBuf> = match fs::read_dir(&dir_path) {
         Ok(entries) => entries
             .filter_map(|entry| entry.ok())
             .filter(|entry| {
-                entry
-                    .file_name()
-                    .to_string_lossy()
-                    .starts_with("jetbrains-idea-")
-                    && entry.file_name().to_string_lossy().ends_with(".desktop")
+                let file_name = entry.file_name().to_string_lossy().to_string();
+                selected_ides.iter().any(|ide| {
+                    file_name.starts_with(&format!("jetbrains-{}", ide.as_str()))
+                        && file_name.ends_with(".desktop")
+                })
             })
             .map(|entry| entry.path())
             .collect(),
@@ -163,7 +221,6 @@ fn main() -> io::Result<()> {
         let current_date = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
         // Modify the content (add the new Exec line)
-        // Modify the content (add the new Exec line)
         let modified_content = content
             .lines()
             .map(|line| {
@@ -199,13 +256,13 @@ fn main() -> io::Result<()> {
         println!("Modified content:\n{}", final_content);
 
         // Write the modified content back to the file
-        if File::create(&file_path)?
-            .write_all(final_content.as_bytes())
-            .is_err()
-        {
-            eprintln!("Failed to write to the file: {:?}", file_path);
-            process::exit(1);
-        }
+        // if File::create(&file_path)?
+        //     .write_all(final_content.as_bytes())
+        //     .is_err()
+        // {
+        //     eprintln!("Failed to write to the file: {:?}", file_path);
+        //     process::exit(1);
+        // }
 
         println!("Patched file: {:?}", file_path);
     }
