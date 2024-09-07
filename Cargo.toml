@@ -5,7 +5,7 @@ authors = ["Gipo 91525512+gipo355@users.noreply.github.com"]
 edition = "2021"
 description = "Small CLI utility to patch JetBrains IDEA desktop files to use a shell to launch the IDE and inherit the environment variables (paths to runtimes, etc.)"
 license = "MIT" 
-documentation = "https://github.com:gipo355/patch-idea-zsh"
+documentation = "https://github.com/gipo355/patch-idea-zsh"
 homepage = "https://github.com/gipo355/patch-idea-zsh"
 repository = "https://github.com/gipo355/patch-idea-zsh"
 
