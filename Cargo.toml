@@ -10,6 +10,6 @@ homepage = "https://github.com/gipo355/patch-idea-zsh"
 repository = "https://github.com/gipo355/patch-idea-zsh"
 
 [dependencies]
-dirs = "4.0"
-chrono = "0.4"
-which = "4.2"
+dirs = "5.0.1"
+chrono = "0.4.38"
+which = "6.0.3"
