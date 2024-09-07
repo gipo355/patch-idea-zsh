@@ -1,9 +1,9 @@
 [package]
-name = "gipo355-patch-idea-zsh"
+name = "patch-idea-zsh"
 version = "0.1.0"
 authors = ["Gipo 91525512+gipo355@users.noreply.github.com"]
 edition = "2021"
-description = "Small utility to patch JetBrains IDEA desktop files to use a shell and inherit the environment"
+description = "Small CLI utility to patch JetBrains IDEA desktop files to use a shell to launch the IDE and inherit the environment variables (paths to runtimes, etc.)"
 license = "MIT" 
 documentation = "https://github.com:gipo355/patch-idea-zsh"
 homepage = "https://github.com/gipo355/patch-idea-zsh"
