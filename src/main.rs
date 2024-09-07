@@ -2,6 +2,8 @@ use chrono::Local;
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
+use std::io::{stdin, stdout, Write as IoWrite};
+use std::path::PathBuf;
 use std::process;
 
 /**
@@ -44,7 +46,7 @@ fn main() -> io::Result<()> {
     );
 
     // Find all matching files
-    let files: Vec<_> = match fs::read_dir(&dir_path) {
+    let files: Vec<PathBuf> = match fs::read_dir(&dir_path) {
         Ok(entries) => entries
             .filter_map(|entry| entry.ok())
             .filter(|entry| {
@@ -54,6 +56,7 @@ fn main() -> io::Result<()> {
                     .starts_with("jetbrains-idea-")
                     && entry.file_name().to_string_lossy().ends_with(".desktop")
             })
+            .map(|entry| entry.path())
             .collect(),
         Err(_) => {
             eprintln!("Failed to read the directory: {:?}", dir_path);
@@ -66,13 +69,46 @@ fn main() -> io::Result<()> {
         process::exit(1);
     }
 
-    // loop through each file and patch it
-    for file in files {
-        let file_path = file.path();
+    // List all found files
+    println!("Found the following JetBrains IDEA desktop files:");
+    for (index, file) in files.iter().enumerate() {
+        println!("{}: {:?}", index + 1, file);
+    }
 
+    // Ask for confirmation
+    println!(
+        "Enter the numbers of the files you want to patch, separated by commas (default is all):"
+    );
+    print!("> ");
+    stdout().flush().unwrap();
+
+    let mut input = String::new();
+    stdin().read_line(&mut input).unwrap();
+    let input = input.trim();
+
+    let files_to_patch: Vec<PathBuf> = if input.is_empty() {
+        files.clone()
+    } else {
+        let indices: Vec<usize> = input
+            .split(',')
+            .filter_map(|s| s.trim().parse::<usize>().ok())
+            .collect();
+
+        indices
+            .into_iter()
+            .filter_map(|i| files.get(i - 1).cloned())
+            .collect()
+    };
+
+    if files_to_patch.is_empty() {
+        eprintln!("No files selected for patching.");
+        process::exit(1);
+    }
+
+    // loop through each file and patch it
+    for file_path in files_to_patch {
         // Read the file content
         let mut content = String::new();
-
         if File::open(&file_path)?
             .read_to_string(&mut content)
             .is_err()
@@ -120,14 +156,16 @@ fn main() -> io::Result<()> {
         // Append the old content and the current date to the modified content
         let final_content = format!("{}\n\n{}", modified_content, final_old_content);
 
+        println!("Modified content:\n{}", final_content);
+
         // Write the modified content back to the file
-        if File::create(&file_path)?
-            .write_all(final_content.as_bytes())
-            .is_err()
-        {
-            eprintln!("Failed to write to the file: {:?}", file_path);
-            process::exit(1);
-        }
+        // if File::create(&file_path)?
+        //     .write_all(final_content.as_bytes())
+        //     .is_err()
+        // {
+        //     eprintln!("Failed to write to the file: {:?}", file_path);
+        //     process::exit(1);
+        // }
 
         println!("Patched file: {:?}", file_path);
     }
