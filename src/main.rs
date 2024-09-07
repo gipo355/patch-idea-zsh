@@ -198,13 +198,13 @@ fn main() -> io::Result<()> {
         println!("Modified content:\n{}", final_content);
 
         // Write the modified content back to the file
-        // if File::create(&file_path)?
-        //     .write_all(final_content.as_bytes())
-        //     .is_err()
-        // {
-        //     eprintln!("Failed to write to the file: {:?}", file_path);
-        //     process::exit(1);
-        // }
+        if File::create(&file_path)?
+            .write_all(final_content.as_bytes())
+            .is_err()
+        {
+            eprintln!("Failed to write to the file: {:?}", file_path);
+            process::exit(1);
+        }
 
         println!("Patched file: {:?}", file_path);
     }
