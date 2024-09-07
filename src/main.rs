@@ -34,6 +34,7 @@ impl JetBrainsIDE {
         }
     }
 
+    #[allow(dead_code)]
     fn from_str(input: &str) -> Option<JetBrainsIDE> {
         match input {
             "idea" => Some(JetBrainsIDE::IntelliJ),
@@ -69,14 +70,14 @@ fn main() -> io::Result<()> {
     let dir_path = match dirs::data_local_dir() {
         Some(path) => path.join("applications"),
         None => {
-            eprintln!("Failed to get the local data directory.");
+            eprintln!("\x1b[31mFailed to get the local data directory.\x1b[0m");
             process::exit(1);
         }
     };
 
     // Get the home directory path
     let home_dir = env::var("HOME").unwrap_or_else(|_| {
-        eprintln!("HOME environment variable not set.");
+        eprintln!("\x1b[31mHOME environment variable not set.\x1b[0m");
         process::exit(1);
     });
 
@@ -94,7 +95,9 @@ fn main() -> io::Result<()> {
         "sh" => "sh",
         "zsh" | "" => "zsh",
         _ => {
-            eprintln!("Invalid shell choice. Please choose either 'bash', 'sh' or 'zsh'.");
+            eprintln!(
+                "\x1b[31mInvalid shell choice. Please choose either 'bash', 'sh' or 'zsh'.\x1b[0m"
+            );
             process::exit(1);
         }
     };
@@ -103,12 +106,15 @@ fn main() -> io::Result<()> {
     let shell_path = match which::which(shell) {
         Ok(path) => path.to_string_lossy().to_string(),
         Err(_) => {
-            eprintln!("Failed to find the path for the shell: {}", shell);
+            eprintln!(
+                "\x1b[31mFailed to find the path for the shell: {}\x1b[0m",
+                shell
+            );
             process::exit(1);
         }
     };
 
-    println!("Using shell: {}", shell_path);
+    println!("\x1b[32mUsing shell: {}\x1b[0m", shell_path);
 
     // Create the new Exec line with the home directory path to use
     let new_exec_line = format!(
@@ -153,18 +159,21 @@ fn main() -> io::Result<()> {
             .map(|entry| entry.path())
             .collect(),
         Err(_) => {
-            eprintln!("Failed to read the directory: {:?}", dir_path);
+            eprintln!(
+                "\x1b[31mFailed to read the directory: {:?}\x1b[0m",
+                dir_path
+            );
             process::exit(1);
         }
     };
 
     if files.is_empty() {
-        eprintln!("No matching JetBrains IDEA desktop files found.");
+        eprintln!("\x1b[31mNo matching JetBrains IDEA desktop files found.\x1b[0m");
         process::exit(1);
     }
 
     // List all found files
-    println!("Found the following JetBrains IDEA desktop files:");
+    println!("\x1b[32mFound the following JetBrains IDEA desktop files:\x1b[0m");
     for (index, file) in files.iter().enumerate() {
         println!("{}: {:?}", index + 1, file);
     }
@@ -195,7 +204,7 @@ fn main() -> io::Result<()> {
     };
 
     if files_to_patch.is_empty() {
-        eprintln!("No files selected for patching.");
+        eprintln!("\x1b[31mNo files selected for patching.\x1b[0m");
         process::exit(1);
     }
 
@@ -207,7 +216,7 @@ fn main() -> io::Result<()> {
             .read_to_string(&mut content)
             .is_err()
         {
-            eprintln!("Failed to read the file: {:?}", file_path);
+            eprintln!("\x1b[31mFailed to read the file: {:?}\x1b[0m", file_path);
             process::exit(1);
         }
 
@@ -216,7 +225,13 @@ fn main() -> io::Result<()> {
             .lines()
             .any(|line| line.starts_with(&format!("Exec={}", shell_path)))
         {
-            println!("File {:?} is already patched. Skipping.", file_path);
+            println!(
+                // red 31m
+                // "\x1b[31mx\x1b[0m File {:?} is already patched. Skipping.",
+                // yellow 33m
+                "\x1b[33mx\x1b[0m File {:?} is already patched. Skipping.",
+                file_path
+            );
             continue;
         }
 
@@ -259,7 +274,7 @@ fn main() -> io::Result<()> {
         // Append the old content and the current date to the modified content
         let final_content = format!("{}\n\n{}", modified_content, final_old_content);
 
-        println!("Modified content:\n{}", final_content);
+        // println!("Modified content:\n{}", final_content);
 
         // Write the modified content back to the file
         if File::create(&file_path)?
@@ -270,7 +285,8 @@ fn main() -> io::Result<()> {
             process::exit(1);
         }
 
-        println!("Patched file: {:?}", file_path);
+        // green 32m
+        println!("\x1b[32mv\x1b[0m Patched file: {:?}", file_path);
     }
 
     Ok(())
