@@ -5,6 +5,10 @@ mod shell;
 use std::io;
 use std::process;
 
+// TODO: parse cli args, allow -all to patch all files and -current to patch current shell used
+// -ac shortcut for -all -current
+// TODO: provide -h/--help
+
 fn main() -> io::Result<()> {
     let dir_path = shell::get_local_data_dir().unwrap_or_else(|| {
         eprintln!("\x1b[31mFailed to get the local data directory.\x1b[0m");
