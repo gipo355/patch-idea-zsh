@@ -1,0 +1,8 @@
+[package]
+name = "gipo355-patch-idea-zsh"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dirs = "4.0"
+chrono = "0.4"
