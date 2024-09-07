@@ -40,7 +40,7 @@ fn main() -> io::Result<()> {
     });
 
     // Ask the user to choose the shell
-    println!("Choose the shell to use (bash/zsh, default is zsh):");
+    println!("Choose the shell to use (sh/bash/zsh, default is zsh):");
     print!("> ");
     stdout().flush().unwrap();
 
@@ -50,9 +50,10 @@ fn main() -> io::Result<()> {
 
     let shell = match shell_input.as_str() {
         "bash" => "bash",
+        "sh" => "sh",
         "zsh" | "" => "zsh",
         _ => {
-            eprintln!("Invalid shell choice. Please choose either 'bash' or 'zsh'.");
+            eprintln!("Invalid shell choice. Please choose either 'bash', 'sh' or 'zsh'.");
             process::exit(1);
         }
     };
