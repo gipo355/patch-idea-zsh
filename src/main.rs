@@ -6,7 +6,7 @@ use std::io::{stdin, stdout, Write as IoWrite};
 use std::path::PathBuf;
 use std::process;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum JetBrainsIDE {
     IntelliJ,
     PyCharm,
@@ -47,6 +47,20 @@ impl JetBrainsIDE {
             "appcode" => Some(JetBrainsIDE::AppCode),
             _ => None,
         }
+    }
+
+    fn all() -> Vec<JetBrainsIDE> {
+        vec![
+            JetBrainsIDE::IntelliJ,
+            JetBrainsIDE::PyCharm,
+            JetBrainsIDE::WebStorm,
+            JetBrainsIDE::PhpStorm,
+            JetBrainsIDE::CLion,
+            JetBrainsIDE::Rider,
+            JetBrainsIDE::DataGrip,
+            JetBrainsIDE::RubyMine,
+            JetBrainsIDE::AppCode,
+        ]
     }
 }
 
@@ -103,33 +117,25 @@ fn main() -> io::Result<()> {
     );
 
     // Ask the user to choose the IDEs
-    println!("Choose the JetBrains IDEs to patch (comma-separated, default is all):");
-    println!(
-        "Options: idea, pycharm, webstorm, phpstorm, clion, rider, datagrip, rubymine, appcode"
-    );
+    println!("Choose the JetBrains IDEs to patch (comma-separated numbers, default is all):");
+    let all_ides = JetBrainsIDE::all();
+    for (index, ide) in all_ides.iter().enumerate() {
+        println!("{}: {}", index + 1, ide.as_str());
+    }
     print!("> ");
     stdout().flush().unwrap();
 
     let mut ide_input = String::new();
     stdin().read_line(&mut ide_input).unwrap();
-    let ide_input = ide_input.trim().to_lowercase();
+    let ide_input = ide_input.trim();
 
     let selected_ides: Vec<JetBrainsIDE> = if ide_input.is_empty() {
-        vec![
-            JetBrainsIDE::IntelliJ,
-            JetBrainsIDE::PyCharm,
-            JetBrainsIDE::WebStorm,
-            JetBrainsIDE::PhpStorm,
-            JetBrainsIDE::CLion,
-            JetBrainsIDE::Rider,
-            JetBrainsIDE::DataGrip,
-            JetBrainsIDE::RubyMine,
-            JetBrainsIDE::AppCode,
-        ]
+        all_ides
     } else {
         ide_input
             .split(',')
-            .filter_map(|s| JetBrainsIDE::from_str(s.trim()))
+            .filter_map(|s| s.trim().parse::<usize>().ok())
+            .filter_map(|i| all_ides.get(i - 1).cloned())
             .collect()
     };
 
@@ -256,13 +262,13 @@ fn main() -> io::Result<()> {
         println!("Modified content:\n{}", final_content);
 
         // Write the modified content back to the file
-        // if File::create(&file_path)?
-        //     .write_all(final_content.as_bytes())
-        //     .is_err()
-        // {
-        //     eprintln!("Failed to write to the file: {:?}", file_path);
-        //     process::exit(1);
-        // }
+        if File::create(&file_path)?
+            .write_all(final_content.as_bytes())
+            .is_err()
+        {
+            eprintln!("Failed to write to the file: {:?}", file_path);
+            process::exit(1);
+        }
 
         println!("Patched file: {:?}", file_path);
     }
