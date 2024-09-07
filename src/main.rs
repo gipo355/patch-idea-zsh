@@ -39,10 +39,39 @@ fn main() -> io::Result<()> {
         process::exit(1);
     });
 
-    // create the new Exec line with the home directory path to use
+    // Ask the user to choose the shell
+    println!("Choose the shell to use (bash/zsh, default is zsh):");
+    print!("> ");
+    stdout().flush().unwrap();
+
+    let mut shell_input = String::new();
+    stdin().read_line(&mut shell_input).unwrap();
+    let shell_input = shell_input.trim().to_lowercase();
+
+    let shell = match shell_input.as_str() {
+        "bash" => "bash",
+        "zsh" | "" => "zsh",
+        _ => {
+            eprintln!("Invalid shell choice. Please choose either 'bash' or 'zsh'.");
+            process::exit(1);
+        }
+    };
+
+    // Get the path of the chosen shell
+    let shell_path = match which::which(shell) {
+        Ok(path) => path.to_string_lossy().to_string(),
+        Err(_) => {
+            eprintln!("Failed to find the path for the shell: {}", shell);
+            process::exit(1);
+        }
+    };
+
+    println!("Using shell: {}", shell_path);
+
+    // Create the new Exec line with the home directory path to use
     let new_exec_line = format!(
-        r#"Exec=/usr/bin/zsh -i -c "{}/.local/share/JetBrains/Toolbox/apps/intellij-idea-ultimate/bin/idea" %u"#,
-        home_dir
+        r#"Exec={} -i -c "{}/.local/share/JetBrains/Toolbox/apps/intellij-idea-ultimate/bin/idea" %u"#,
+        shell_path, home_dir
     );
 
     // Find all matching files
@@ -118,7 +147,10 @@ fn main() -> io::Result<()> {
         }
 
         // Check if the file is already patched
-        if content.lines().any(|line| line.starts_with("Exec=/")) {
+        if content
+            .lines()
+            .any(|line| line.starts_with(&format!("Exec={}", shell_path)))
+        {
             println!("File {:?} is already patched. Skipping.", file_path);
             continue;
         }
