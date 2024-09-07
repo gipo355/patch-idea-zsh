@@ -37,7 +37,7 @@ fn main() -> io::Result<()> {
 
     let selected_ides = ide::choose_ides();
 
-    let files = patch::find_matching_files(&dir_path, &selected_ides).unwrap_or_else(|| {
+    let files = patch::find_matching_files(&dir_path, &selected_ides).unwrap_or_else(|_| {
         eprintln!(
             "\x1b[31mFailed to read the directory: {:?}\x1b[0m",
             dir_path
