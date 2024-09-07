@@ -2,6 +2,7 @@ use chrono::Local;
 use std::env;
 use std::fs::{self, File};
 use std::io::{self, Read, Write};
+use std::process;
 
 /**
 * path:
@@ -21,11 +22,20 @@ use std::io::{self, Read, Write};
 * StartupNotify=true
 */
 fn main() -> io::Result<()> {
-    // get the .local/share/ directory path
-    let dir_path = dirs::data_local_dir().unwrap().join("applications");
+    // Get the .local/share/ directory path
+    let dir_path = match dirs::data_local_dir() {
+        Some(path) => path.join("applications"),
+        None => {
+            eprintln!("Failed to get the local data directory.");
+            process::exit(1);
+        }
+    };
 
-    // get the home directory path
-    let home_dir = env::var("HOME").expect("HOME environment variable not set");
+    // Get the home directory path
+    let home_dir = env::var("HOME").unwrap_or_else(|_| {
+        eprintln!("HOME environment variable not set.");
+        process::exit(1);
+    });
 
     // create the new Exec line with the home directory path to use
     let new_exec_line = format!(
@@ -34,18 +44,27 @@ fn main() -> io::Result<()> {
     );
 
     // Find all matching files
-    let files: Vec<_> = fs::read_dir(dir_path)?
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| {
-            entry
-                .file_name()
-                .to_string_lossy()
-                // apply the filter
-                .starts_with("jetbrains-idea-")
-                && entry.file_name().to_string_lossy().ends_with(".desktop")
-        })
-        // collect the files into a vector
-        .collect();
+    let files: Vec<_> = match fs::read_dir(&dir_path) {
+        Ok(entries) => entries
+            .filter_map(|entry| entry.ok())
+            .filter(|entry| {
+                entry
+                    .file_name()
+                    .to_string_lossy()
+                    .starts_with("jetbrains-idea-")
+                    && entry.file_name().to_string_lossy().ends_with(".desktop")
+            })
+            .collect(),
+        Err(_) => {
+            eprintln!("Failed to read the directory: {:?}", dir_path);
+            process::exit(1);
+        }
+    };
+
+    if files.is_empty() {
+        eprintln!("No matching JetBrains IDEA desktop files found.");
+        process::exit(1);
+    }
 
     // loop through each file and patch it
     for file in files {
@@ -53,7 +72,14 @@ fn main() -> io::Result<()> {
 
         // Read the file content
         let mut content = String::new();
-        File::open(&file_path)?.read_to_string(&mut content)?;
+
+        if File::open(&file_path)?
+            .read_to_string(&mut content)
+            .is_err()
+        {
+            eprintln!("Failed to read the file: {:?}", file_path);
+            process::exit(1);
+        }
 
         // Store the old content (for appending to the end of the file)
         let old_content = content.clone();
@@ -95,8 +121,13 @@ fn main() -> io::Result<()> {
         let final_content = format!("{}\n\n{}", modified_content, final_old_content);
 
         // Write the modified content back to the file
-        let mut file = File::create(&file_path)?;
-        file.write_all(final_content.as_bytes())?;
+        if File::create(&file_path)?
+            .write_all(final_content.as_bytes())
+            .is_err()
+        {
+            eprintln!("Failed to write to the file: {:?}", file_path);
+            process::exit(1);
+        }
 
         println!("Patched file: {:?}", file_path);
     }
