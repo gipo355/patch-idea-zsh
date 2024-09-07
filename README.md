@@ -1,5 +1,7 @@
 # patch-idea-zsh
 
+⚠ LINUX ONLY ⚠
+
 Small CLI utility to patch JetBrains IDEA desktop files to use a shell to launch the IDE and inherit the environment variables (paths to runtimes, etc.)
 
 It will find all the desktop files in the local data directory and patch them to use the shell you choose (sh/bash/zsh) and the path to the shell executable.
