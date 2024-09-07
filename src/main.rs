@@ -117,12 +117,19 @@ fn main() -> io::Result<()> {
             process::exit(1);
         }
 
+        // Check if the file is already patched
+        if content.lines().any(|line| line.starts_with("Exec=/")) {
+            println!("File {:?} is already patched. Skipping.", file_path);
+            continue;
+        }
+
         // Store the old content (for appending to the end of the file)
         let old_content = content.clone();
 
         // Get the current date and time
         let current_date = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
+        // Modify the content (add the new Exec line)
         // Modify the content (add the new Exec line)
         let modified_content = content
             .lines()
